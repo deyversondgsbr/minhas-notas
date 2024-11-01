@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minhas Notas Locais</title>
+    <title>Notas do Dia a Dia</title>
     <style>
-        /* CSS para aparência */
+        /* CSS Simplificado */
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -48,40 +48,41 @@
         </div>
         
         <div class="notes" id="notes"></div>
+        <div class="load-more">
+            <button onclick="loadMoreNotes()">Carregar Mais</button>
+        </div>
+        <button class="btn" onclick="exportNotesJSON()">Exportar Notas para JSON</button>
     </div>
 
     <script>
-        const NOTE_LIMIT = 100;  // Limite de notas
+        const NOTE_LIMIT = 100;   // Máximo de notas armazenadas
+        const INITIAL_LOAD = 10;  // Número inicial de notas para carregar
+        let currentLoad = INITIAL_LOAD; 
 
         function saveNote() {
             const title = document.getElementById("title").value;
             const description = document.getElementById("description").value;
-
             if (title && description) {
-                const notes = JSON.parse(localStorage.getItem("notes")) || [];
+                let notes = getNotes();
                 if (notes.length >= NOTE_LIMIT) {
-                    alert("Você atingiu o limite de notas! Considere fazer backup e limpar as notas.");
-                    return;
+                    notes = [];
                 }
-
                 notes.push({ title, description });
-                localStorage.setItem("notes", JSON.stringify(notes));
-                
+                saveNotes(notes);
+                displayNotes();
                 document.getElementById("title").value = '';
                 document.getElementById("description").value = '';
-                
-                displayNotes();
             } else {
                 alert("Preencha o título e a descrição da nota!");
             }
         }
 
         function displayNotes() {
-            const notes = JSON.parse(localStorage.getItem("notes")) || [];
+            const notes = getNotes();
             const notesContainer = document.getElementById("notes");
             notesContainer.innerHTML = '';
 
-            notes.forEach(note => {
+            notes.slice(0, currentLoad).forEach(note => {
                 const noteContainer = document.createElement("div");
                 noteContainer.classList.add("note");
                 noteContainer.innerHTML = `<h4>${note.title}</h4><p>${note.description}</p>`;
@@ -89,20 +90,49 @@
             });
         }
 
+        function loadMoreNotes() {
+            currentLoad += INITIAL_LOAD;
+            displayNotes();
+        }
+
         function searchNotes() {
             const query = document.getElementById("search").value.toLowerCase();
-            const notes = JSON.parse(localStorage.getItem("notes")) || [];
+            const notes = getNotes();
             const notesContainer = document.getElementById("notes");
             notesContainer.innerHTML = '';
 
-            notes.forEach(note => {
-                if (note.title.toLowerCase().includes(query) || note.description.toLowerCase().includes(query)) {
-                    const noteContainer = document.createElement("div");
-                    noteContainer.classList.add("note");
-                    noteContainer.innerHTML = `<h4>${note.title}</h4><p>${note.description}</p>`;
-                    notesContainer.appendChild(noteContainer);
-                }
+            const filteredNotes = notes.filter(note => 
+                note.title.toLowerCase().includes(query) || 
+                note.description.toLowerCase().includes(query)
+            ).slice(0, currentLoad);
+
+            filteredNotes.forEach(note => {
+                const noteContainer = document.createElement("div");
+                noteContainer.classList.add("note");
+                noteContainer.innerHTML = `<h4>${note.title}</h4><p>${note.description}</p>`;
+                notesContainer.appendChild(noteContainer);
             });
+        }
+
+        function exportNotesJSON() {
+            const notes = getNotes();
+            const jsonString = JSON.stringify(notes, null, 2);
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "notas.json";
+            link.click();
+            URL.revokeObjectURL(url);
+            alert("Notas exportadas para um arquivo JSON!");
+        }
+
+        function saveNotes(notes) {
+            localStorage.setItem("notes", JSON.stringify(notes));
+        }
+
+        function getNotes() {
+            return JSON.parse(localStorage.getItem("notes")) || [];
         }
 
         window.onload = displayNotes;
