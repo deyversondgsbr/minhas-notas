@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notas do Dia a Dia</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f3f7fa;
+        }
+        .container {
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #2c3e50;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            font-size: 14px;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .input-group input, .input-group textarea {
+            padding: 10px;
+            border: 1px solid #ccd1d9;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .input-group textarea {
+            resize: none;
+            height: 80px;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .search {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .search input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+        .notes {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .note {
+            background-color: #eaf1f8;
+            border: 1px solid #d1e0ea;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .note h4 {
+            margin: 0;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+        .note p {
+            font-size: 14px;
+            color: #34495e;
+            margin-top: 5px;
+        }
+        .load-more {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .load-more button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Minhas Notas</h2>
+        <div class="input-group">
+            <label for="title">Título</label>
+            <input type="text" id="title" placeholder="Ex: Onde guardei a chave...">
+        </div>
+        <div class="input-group">
+            <label for="description">Descrição</label>
+            <textarea id="description" placeholder="Detalhes..."></textarea>
+        </div>
+        <button class="btn" onclick="saveNote()">Salvar Nota</button>
+        
+        <div class="search">
+            <input type="text" id="search" placeholder="Buscar notas..." oninput="searchNotes()">
+        </div>
+        
+        <div class="notes" id="notes"></div>
+        <div class="load-more">
+            <button onclick="loadMoreNotes()">Carregar Mais</button>
+        </div>
+    </div>
+
+    <script>
+        const NOTE_LIMIT = 100;   // Máximo de notas armazenadas
+        const INITIAL_LOAD = 10;  // Número inicial de notas para carregar
+        let currentLoad = INITIAL_LOAD; 
+
+        function saveNote() {
+            const title = document.getElementById("title").value;
+            const description = document.getElementById("description").value;
+            if (title && description) {
+                let notes = getNotes();
+                if (notes.length >= NOTE_LIMIT) notes.shift(); // Remove a nota mais antiga
+                notes.push({ title, description });
+                saveNotes(notes);
+                displayNotes();
+                document.getElementById("title").value = '';
+                document.getElementById("description").value = '';
+            } else {
+                alert("Preencha o título e a descrição da nota!");
+            }
+        }
+
+        function displayNotes() {
+            const notes = getNotes();
+            const notesContainer = document.getElementById("notes");
+            notesContainer.innerHTML = '';
+
+            notes.slice(0, currentLoad).forEach(note => {
+                const noteContainer = document.createElement("div");
+                noteContainer.classList.add("note");
+                noteContainer.innerHTML = `<h4>${note.title}</h4><p>${note.description}</p>`;
+                notesContainer.appendChild(noteContainer);
+            });
+        }
+
+        function loadMoreNotes() {
+            currentLoad += INITIAL_LOAD;
+            displayNotes();
+        }
+
+        function searchNotes() {
+            const query = document.getElementById("search").value.toLowerCase();
+            const notes = getNotes();
+            const notesContainer = document.getElementById("notes");
+            notesContainer.innerHTML = '';
+
+            const filteredNotes = notes.filter(note => 
+                note.title.toLowerCase().includes(query) || 
+                note.description.toLowerCase().includes(query)
+            ).slice(0, currentLoad);
+
+            filteredNotes.forEach(note => {
+                const noteContainer = document.createElement("div");
+                noteContainer.classList.add("note");
+                noteContainer.innerHTML = `<h4>${note.title}</h4><p>${note.description}</p>`;
+                notesContainer.appendChild(noteContainer);
+            });
+        }
+
+        function saveNotes(notes) {
+            localStorage.setItem("notes", JSON.stringify(notes));
+        }
+
+        function getNotes() {
+            return JSON.parse(localStorage.getItem("notes")) || [];
+        }
+
+        window.onload = displayNotes;
+    </script>
+</body>
+</html>
