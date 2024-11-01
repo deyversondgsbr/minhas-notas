@@ -4,138 +4,291 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notas do Dia a Dia</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
-        /* CSS Simplificado */
         body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f3f7fa;
+            font-family: 'Arial', sans-serif;
+            background-color: #eaeef1;
         }
         .container {
-            width: 90%;
-            max-width: 400px;
-            padding: 20px;
+            max-width: 600px;
+            margin: 20px auto;
             background-color: #ffffff;
-            border-radius: 10px;
+            border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
         }
-        h2 { text-align: center; margin-bottom: 20px; }
-        .input-group, .search, .notes, .load-more { margin-bottom: 15px; }
-        .btn { width: 100%; padding: 12px; background-color: #3498db; color: white; border: none; cursor: pointer; }
-        .notes { max-height: 300px; overflow-y: auto; }
-        .note { background-color: #eaf1f8; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        h2 {
+            color: #333;
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .tab {
+            cursor: pointer;
+            transition: background-color 0.3s, font-weight 0.3s;
+            padding: 10px;
+            border-radius: 12px;
+            flex: 1;
+            text-align: center;
+            margin: 0 5px;
+            background-color: #007bff;
+            color: white;
+        }
+        .tab.active {
+            background-color: #0056b3;
+            font-weight: bold;
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        .btn {
+            border-radius: 12px;
+            padding: 10px;
+        }
+        .notes {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            padding: 10px;
+        }
+        .note {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            color: white;
+            position: relative;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .note h4 {
+            margin: 0;
+        }
+        .note .date {
+            font-size: 12px;
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .alert {
+            display: none;
+            margin-top: 10px;
+        }
+        #currentDateTime {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #555;
+            text-align: center;
+        }
+        #currentDate {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        #currentTime {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Informações de Data e Hora -->
+        <div id="currentDateTime">
+            <div id="currentDate"></div>
+            <div id="currentTime"></div>
+        </div>
+
         <h2>Minhas Notas</h2>
-        <div class="input-group">
-            <label for="title">Título</label>
-            <input type="text" id="title" placeholder="Ex: Onde guardei a chave...">
+
+        <!-- Abas para navegação -->
+        <div class="tabs">
+            <div class="tab active" onclick="showSection('create')">Criar Notas</div>
+            <div class="tab" onclick="showSection('search')">Pesquisar Notas</div>
         </div>
-        <div class="input-group">
-            <label for="description">Descrição</label>
-            <textarea id="description" placeholder="Detalhes..."></textarea>
+
+        <div class="section active" id="create">
+            <div class="input-group">
+                <input type="text" id="title" class="form-control" placeholder="Título" required>
+            </div>
+            <div class="input-group">
+                <textarea id="description" class="form-control" placeholder="Descrição" required></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="saveNote()">Salvar Nota</button>
+
+            <!-- Botões para mostrar/ocultar notas -->
+            <div class="d-flex justify-content-between mt-2">
+                <button class="btn btn-outline-secondary" id="toggleShowNotes" onclick="toggleNotes()">Mostrar Notas</button>
+                <button class="btn btn-outline-secondary" id="toggleHideNotes" onclick="toggleNotes()">Ocultar Notas</button>
+            </div>
+
+            <div class="notes" id="notes"></div>
+
+            <!-- Alerta para nota vazia -->
+            <div class="alert alert-danger" id="emptyNoteAlert">Por favor, preencha o título e a descrição da nota.</div>
         </div>
-        <button class="btn" onclick="saveNote()">Salvar Nota</button>
-        
-        <div class="search">
-            <input type="text" id="search" placeholder="Buscar notas..." oninput="searchNotes()">
+
+        <!-- Seção de Pesquisa -->
+        <div class="section" id="search">
+            <h3>Pesquisar Notas</h3>
+            <div class="input-group mb-3">
+                <input type="text" id="search-input" class="form-control" placeholder="Buscar notas..." oninput="searchNotes()">
+            </div>
+            <div class="notes" id="search-results"></div>
         </div>
-        
-        <div class="notes" id="notes"></div>
-        <div class="load-more">
-            <button onclick="loadMoreNotes()">Carregar Mais</button>
-        </div>
-        <button class="btn" onclick="exportNotesJSON()">Exportar Notas para JSON</button>
     </div>
 
     <script>
-        const NOTE_LIMIT = 100;   // Máximo de notas armazenadas
-        const INITIAL_LOAD = 10;  // Número inicial de notas para carregar
-        let currentLoad = INITIAL_LOAD; 
+        // Função para mostrar a seção ativa
+        function showSection(section) {
+            const sections = document.querySelectorAll('.section');
+            const tabs = document.querySelectorAll('.tab');
+            sections.forEach(s => {
+                s.classList.remove('active');
+            });
+            tabs.forEach(t => {
+                t.classList.remove('active');
+            });
+            document.getElementById(section).classList.add('active');
+            document.querySelector(`.tab[onclick="showSection('${section}')"]`).classList.add('active');
 
-        function saveNote() {
-            const title = document.getElementById("title").value;
-            const description = document.getElementById("description").value;
-            if (title && description) {
-                let notes = getNotes();
-                if (notes.length >= NOTE_LIMIT) {
-                    notes = [];
-                }
-                notes.push({ title, description });
-                saveNotes(notes);
-                displayNotes();
-                document.getElementById("title").value = '';
-                document.getElementById("description").value = '';
-            } else {
-                alert("Preencha o título e a descrição da nota!");
+            if (section === 'search') {
+                searchNotes();
             }
         }
 
-        function displayNotes() {
-            const notes = getNotes();
+        // Função para mostrar ou ocultar notas
+        function toggleNotes() {
             const notesContainer = document.getElementById("notes");
+            const showButton = document.getElementById("toggleShowNotes");
+            const hideButton = document.getElementById("toggleHideNotes");
+
+            if (notesContainer.style.display === "none") {
+                notesContainer.style.display = "block";
+                showButton.style.display = "none";
+                hideButton.style.display = "block";
+            } else {
+                notesContainer.style.display = "none";
+                showButton.style.display = "block";
+                hideButton.style.display = "none";
+            }
+        }
+
+        // Função para salvar a nota
+        function saveNote() {
+            const title = document.getElementById("title").value.trim();
+            const description = document.getElementById("description").value.trim();
+            const emptyNoteAlert = document.getElementById("emptyNoteAlert");
+
+            if (!title || !description) {
+                emptyNoteAlert.style.display = "block";
+                setTimeout(() => { emptyNoteAlert.style.display = "none"; }, 3000);
+                return;
+            }
+
+            const notes = JSON.parse(localStorage.getItem("notes")) || [];
+            const newNote = {
+                title,
+                description,
+                date: new Date().toLocaleString('pt-BR'),
+                color: getRandomColor()
+            };
+            notes.push(newNote);
+            localStorage.setItem("notes", JSON.stringify(notes));
+
+            displayNotes();
+
+            document.getElementById("title").value = "";
+            document.getElementById("description").value = "";
+        }
+
+        // Função para gerar cor aleatória
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        // Função para exibir as notas
+        function displayNotes() {
+            const notesContainer = document.getElementById("notes");
+            const notes = JSON.parse(localStorage.getItem("notes")) || [];
             notesContainer.innerHTML = '';
 
-            notes.slice(0, currentLoad).forEach(note => {
+            notes.forEach(note => {
                 const noteContainer = document.createElement("div");
                 noteContainer.classList.add("note");
-                noteContainer.innerHTML = `<h4>${note.title}</h4><p>${note.description}</p>`;
+                noteContainer.style.backgroundColor = note.color || getRandomColor();
+                noteContainer.innerHTML = `
+                    <h4>${note.title}</h4>
+                    <p>${note.description}</p>
+                    <div class="date">${note.date}</div>
+                `;
                 notesContainer.appendChild(noteContainer);
             });
         }
 
-        function loadMoreNotes() {
-            currentLoad += INITIAL_LOAD;
-            displayNotes();
-        }
-
+        // Função para pesquisar notas
         function searchNotes() {
-            const query = document.getElementById("search").value.toLowerCase();
-            const notes = getNotes();
-            const notesContainer = document.getElementById("notes");
-            notesContainer.innerHTML = '';
+            const query = document.getElementById("search-input").value.toLowerCase();
+            const notes = JSON.parse(localStorage.getItem("notes")) || [];
+            const searchResultsContainer = document.getElementById("search-results");
+            searchResultsContainer.innerHTML = '';
 
             const filteredNotes = notes.filter(note => 
                 note.title.toLowerCase().includes(query) || 
                 note.description.toLowerCase().includes(query)
-            ).slice(0, currentLoad);
+            );
 
             filteredNotes.forEach(note => {
                 const noteContainer = document.createElement("div");
                 noteContainer.classList.add("note");
-                noteContainer.innerHTML = `<h4>${note.title}</h4><p>${note.description}</p>`;
-                notesContainer.appendChild(noteContainer);
+                noteContainer.style.backgroundColor = note.color || getRandomColor();
+                noteContainer.innerHTML = `
+                    <h4>${note.title}</h4>
+                    <p>${note.description}</p>
+                    <div class="date">${note.date}</div>
+                `;
+                searchResultsContainer.appendChild(noteContainer);
             });
         }
 
-        function exportNotesJSON() {
-            const notes = getNotes();
-            const jsonString = JSON.stringify(notes, null, 2);
-            const blob = new Blob([jsonString], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = "notas.json";
-            link.click();
-            URL.revokeObjectURL(url);
-            alert("Notas exportadas para um arquivo JSON!");
+        // Atualiza a data e hora atual
+        function updateDateTime() {
+            const now = new Date();
+            const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            document.getElementById("currentDate").textContent = now.toLocaleDateString('pt-BR', optionsDate);
+            document.getElementById("currentTime").textContent = now.toLocaleTimeString('pt-BR', optionsTime);
         }
 
-        function saveNotes(notes) {
-            localStorage.setItem("notes", JSON.stringify(notes));
-        }
-
-        function getNotes() {
-            return JSON.parse(localStorage.getItem("notes")) || [];
-        }
-
-        window.onload = displayNotes;
+        // Exibir as notas ao carregar a página
+        window.onload = function() {
+            displayNotes();
+            document.getElementById("notes").style.display = "none"; // Ocultar notas inicialmente
+            document.getElementById("toggleHideNotes").style.display = "none"; // Ocultar botão "Ocultar Notas" inicialmente
+            
+            // Atualizar a data/hora a cada segundo
+            setInterval(updateDateTime, 1000);
+            updateDateTime(); // Chama a função uma vez para definir a data/hora inicial
+        };
     </script>
 </body>
 </html>
